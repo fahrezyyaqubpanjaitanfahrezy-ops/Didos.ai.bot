@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Didos AI - Partner</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; padding: 15px; margin: 0; }
+        #chat-box { 
+            display: flex; flex-direction: column; gap: 15px; 
+            height: 400px; overflow-y: auto; background: #1e1e1e; 
+            padding: 15px; border-radius: 15px; border: 1px solid #333;
+        }
+        .didos-msg { align-self: flex-start; background: #2a2a2a; padding: 10px; border-radius: 15px 15px 15px 2px; max-width: 80%; border-left: 4px solid #3b82f6; }
+        .user-msg { align-self: flex-end; background: #3b82f6; padding: 10px; border-radius: 15px 15px 2px 15px; max-width: 80%; }
+        .label { font-size: 0.7rem; opacity: 0.6; margin-bottom: 5px; display: block; font-weight: bold; }
+        .input-group { display: flex; gap: 8px; margin-top: 15px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #2a2a2a; color: white; outline: none; }
+        button { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-kirim { background: #3b82f6; color: white; }
+        .btn-reset { background: #ff4444; color: white; width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h3>Didos AI ⚡</h3>
+    <div id="chat-box"></div>
+
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="Ketik di sini...">
+        <button class="btn-kirim" onclick="kirimPesan()">Kirim</button>
+    </div>
+    <button class="btn-reset" onclick="resetMemori()">Reset Memori</button>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const input = document.getElementById('userInput');
+
+        // 1. Fungsi Nyapa di Awal
+        window.onload = () => {
+            const nama = localStorage.getItem('namaUser');
+            if (nama) {
+                tambahPesan("Didos AI", `Halo! ${nama}, ada yang mau dibahas lagi?`);
+            } else {
+                tambahPesan("Didos AI", "Halo! Aku Didos. Partner cerdasmu. Nama kamu siapa?");
+            }
+        };
+
+        // 2. Fungsi Kirim Pesan (Pintar)
+        async function kirimPesan() {
+            const pesan = input.value.trim();
+            if (!pesan) return;
+
+            tambahPesan("Kamu", pesan);
+            input.value = '';
+
+            const namaTerdaftar = localStorage.getItem('namaUser');
+            
+            if (!namaTerdaftar) {
+                localStorage.setItem('namaUser', pesan);
+                setTimeout(() => {
+                    tambahPesan("Didos AI", `Oke ${pesan}, namamu sudah kusimpan! Tanya apa saja.`);
+                }, 800);
+            } else {
+                tambahPesan("Didos AI", "Didos lagi mikir bentar...");
+
+                try {
+                    // Pakai API gratisan yang gampang
+                    const resp = await fetch(`https://api.simsimi.vn/v2/simsimi?text=${encodeURIComponent(pesan)}&lc=id`);
+                    const data = await resp.json();
+
+                    // Hapus tulisan "Didos lagi mikir"
+                    const msgs = document.querySelectorAll('.didos-msg');
+                    msgs[msgs.length - 1].remove();
+
+                    tambahPesan("Didos AI", data.result || "Duh, aku lagi blank. Coba tanya lagi?");
+                } catch (e) {
+                    tambahPesan("Didos AI", "Koneksi lagi bermasalah nih, Rez!");
+                }
+            }
+        }
+
+        // 3. Fungsi Nambah Balon Chat
+        function tambahPesan(pengirim, teks) {
+            const isDidos = pengirim === "Didos AI";
+            const className = isDidos ? "didos-msg" : "user-msg";
+            chatBox.innerHTML += `<div class="${className}"><span class="label">${pengirim}</span><div>${teks}</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 4. Fungsi Reset
+        function resetMemori() {
+            if (confirm("Hapus ingatan Didos?")) {
+                localStorage.removeItem('namaUser');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
